@@ -1,0 +1,37 @@
+#https://github.com/apache/flink-kubernetes-operator/blob/main/examples/basic-session-deployment-only.yaml
+apiVersion: flink.apache.org/v1beta1
+kind: FlinkDeployment
+metadata:
+  name: pforge-flink-session
+spec:
+  image: flink:1.16
+  flinkVersion: v1_16
+  flinkConfiguration:
+    taskmanager.numberOfTaskSlots: "2"
+    taskmanager.memory.flink.size: "1536m"
+    taskmanager.memory.task.off-heap.size: "256m"
+    taskmanager.memory.jvm-overhead.max: "1024m"
+    execution.runtime-mode: "BATCH"
+  serviceAccount: flink
+  jobManager:
+    resource:
+      memory: "2048m"
+      cpu: 1
+  taskManager:
+    resource:
+      memory: "2048m"
+      cpu: 1
+    podTemplate:
+      spec:
+        containers:
+          - name: "beam-worker-pool"
+            image: "apache/beam_python3.10_sdk:2.52.0"
+            ports:
+              - containerPort: 50000
+            readinessProbe:
+              tcpSocket:
+                port: 50000
+              periodSeconds: 10
+            #resource:
+            command: ["/opt/apache/beam/root"]
+            args: ["--worker_pool"]
